@@ -1,0 +1,22 @@
+#cloud-config
+# Fleet VM bootstrap — idempotent (safe on every boot / re-apply)
+hostname: ${hostname}
+fqdn: ${hostname}.${domain}
+manage_etc_hosts: true
+
+timezone: ${timezone}
+
+ssh_authorized_keys:
+  - ${ssh_public_key}
+
+package_update: ${package_update}
+packages:
+${packages}
+
+runcmd:
+  - [ sh, -c, "echo 'fleet bootstrap complete' > /tmp/fleet-ready" ]
+%{ if install_guest_agent == "true" ~}
+  - [ sh, -c, "command -v systemctl >/dev/null 2>&1 && systemctl enable --now qemu-guest-agent || true" ]
+%{ endif ~}
+
+final_message: "fleet ${hostname} cloud-init complete after $UPTIME seconds"

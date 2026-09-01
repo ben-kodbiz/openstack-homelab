@@ -33,7 +33,7 @@ resource "openstack_networking_secgroup_rule_v2" "basic_ssh" {
   protocol          = "tcp"
   port_range_min    = 22
   port_range_max    = 22
-  remote_ip_prefix  = var.allowed_ssh_cidr  # Restrict to your IP for security
+  remote_ip_prefix  = var.allowed_ssh_cidr # Restrict to your IP for security
 }
 
 # Allow ICMP (ping)
@@ -67,7 +67,7 @@ resource "openstack_networking_secgroup_rule_v2" "web_ssh" {
 }
 
 resource "openstack_networking_secgroup_rule_v2" "web_http" {
-  count             = var.enable_http ? 1 : 0  # Only if enabled
+  count             = var.enable_http ? 1 : 0 # Only if enabled
   security_group_id = openstack_networking_secgroup_v2.web_server.id
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -78,7 +78,7 @@ resource "openstack_networking_secgroup_rule_v2" "web_http" {
 }
 
 resource "openstack_networking_secgroup_rule_v2" "web_https" {
-  count             = var.enable_https ? 1 : 0  # Only if enabled
+  count             = var.enable_https ? 1 : 0 # Only if enabled
   security_group_id = openstack_networking_secgroup_v2.web_server.id
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -124,7 +124,7 @@ resource "openstack_networking_secgroup_rule_v2" "db_mysql" {
   protocol          = "tcp"
   port_range_min    = 3306
   port_range_max    = 3306
-  remote_ip_prefix  = var.internal_network_cidr  # Only from internal network
+  remote_ip_prefix  = var.internal_network_cidr # Only from internal network
 }
 
 # ----------------------------------------------------------------------------

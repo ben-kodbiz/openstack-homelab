@@ -45,7 +45,7 @@ resource "openstack_networking_subnet_v2" "internal" {
     end   = cidrhost(var.internal_network_cidr, -2)
   }
 
-  gateway_ip = var.internal_network_gateway
+  gateway_ip      = var.internal_network_gateway
   dns_nameservers = [var.internal_dns]
 
   tags = ["managed-by-opentofu"]

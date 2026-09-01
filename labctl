@@ -1,0 +1,127 @@
+#!/usr/bin/env zsh
+# ============================================================================
+# labctl — Thin user-facing wrapper over the lab toolchain
+# ============================================================================
+# Never rewrites the working scripts — just routes to them.
+#
+# Usage:
+#   ./labctl <command> [args]
+#
+# Commands:
+#   preflight            Host readiness checks
+#   status               Host/VM/Docker/OpenStack status
+#   openstack status     Same as: ./openstack-lab.zsh status
+#   openstack start      Start lab VM + containers (start-openstack.zsh)
+#   openstack stop       Graceful stop (stop-openstack.zsh)
+#   fleet prepare        Create flavor + SG + keypair prerequisites
+#   fleet plan [N]       tofu plan for the fleet (default N from lab.tfvars)
+#   fleet apply [N]      tofu apply the fleet (requires confirmation)
+#   fleet status         List fleet VMs + IPs from tofu state
+#   fleet verify         Health check: all fleet VMs ACTIVE + pingable
+#   fleet destroy        Interactive-confirmed tofu destroy (fleet scope only)
+#   test                 Run zsh test suite
+#   ci                   Run gitops/ci/validate.sh
+#   help                 This help
+
+set -uo pipefail
+
+REPO_ROOT="${0:A:h}"
+source "$REPO_ROOT/config/lab.conf" 2>/dev/null || true
+
+FLEET_ENV_DIR="$REPO_ROOT/tofu/environments/lab"
+
+hr()  { print -r -- "------------------------------------------------------------" }
+die() { print -u2 -- "error: $1"; exit 1; }
+
+need_env() {
+  # OpenStack credentials required for tofu fleet ops
+  if [[ -z "${OS_AUTH_URL:-}" || -z "${OS_PASSWORD:-}" ]]; then
+    die "OpenStack credentials not set. Source admin-openrc.sh from the guest first:
+  ssh ${GUEST_USER:-stack}@${LAB_NAME:-openstack-lab-01} cat /etc/kolla/admin-openrc.sh > /tmp/lab-openrc.sh
+  source /tmp/lab-openrc.sh"
+  fi
+}
+
+cmd_help() {
+  sed -n '2,27p' "$REPO_ROOT/labctl" | grep '^#' | sed 's/^# \{0,1\}//'
+}
+
+cmd_preflight()  { exec "$REPO_ROOT/openstack-lab.zsh" preflight "$@"; }
+cmd_status()     { exec "$REPO_ROOT/openstack-lab.zsh" status "$@"; }
+
+cmd_openstack() {
+  case "${1:-status}" in
+    status) exec "$REPO_ROOT/openstack-lab.zsh" status ;;
+    start)  exec "$REPO_ROOT/scripts/start-openstack.zsh" ;;
+    stop)   exec "$REPO_ROOT/scripts/stop-openstack.zsh" ;;
+    *) die "openstack: unknown subcommand '$1' (status|start|stop)" ;;
+  esac
+}
+
+cmd_fleet() {
+  local sub="${1:-}"; shift 2>/dev/null || true
+  case "$sub" in
+    prepare)
+      need_env
+      exec "$REPO_ROOT/fleet/prepare.zsh"
+      ;;
+    plan)
+      need_env
+      local -a args=(-chdir="$FLEET_ENV_DIR" plan)
+      [[ "${1:-}" =~ ^[0-9]+$ ]] && args+=(-var "fleet_size=$1")
+      tofu "${args[@]}"
+      ;;
+    apply)
+      need_env
+      local -a args=(-chdir="$FLEET_ENV_DIR" apply)
+      [[ "${1:-}" =~ ^[0-9]+$ ]] && args+=(-var "fleet_size=$1")
+      tofu "${args[@]}"
+      ;;
+    status)
+      tofu -chdir="$FLEET_ENV_DIR" output fleet_instance_names 2>/dev/null
+      tofu -chdir="$FLEET_ENV_DIR" output fleet_fixed_ips 2>/dev/null
+      ;;
+    verify)
+      exec "$REPO_ROOT/fleet/verify.zsh"
+      ;;
+    destroy)
+      hr
+      print -r -- "This destroys ALL fleet VMs (fleet-*) — the OpenStack VM is untouched."
+      print -r -- "Resources in scope: instances, ports, boot volumes, fleet SG."
+      local confirm=""
+      read "confirm?Type 'destroy fleet' to continue: "
+      [[ "$confirm" == "destroy fleet" ]] || die "aborted (nothing destroyed)"
+      tofu -chdir="$FLEET_ENV_DIR" destroy
+      ;;
+    *) die "fleet: unknown subcommand '$sub' (prepare|plan|apply|status|verify|destroy)" ;;
+  esac
+}
+
+cmd_test() {
+  local rc=0
+  for t in "$REPO_ROOT"/tests/test-*.zsh; do
+    hr; print -r -- "running: $t"
+    zsh "$t" || rc=1
+  done
+  hr
+  (( rc == 0 )) && print -r -- "ALL TESTS PASSED" || print -u2 -- "TESTS FAILED"
+  exit $rc
+}
+
+cmd_ci() { exec "$REPO_ROOT/gitops/ci/validate.sh" ; }
+
+main() {
+  local cmd="${1:-help}"; shift 2>/dev/null || true
+  case "$cmd" in
+    preflight)        cmd_preflight "$@" ;;
+    status)           cmd_status "$@" ;;
+    openstack)         cmd_openstack "$@" ;;
+    fleet)             cmd_fleet "$@" ;;
+    test)              cmd_test ;;
+    ci)                cmd_ci ;;
+    help|-h|--help)    cmd_help ;;
+    *) die "unknown command '$cmd' — try: ./labctl help" ;;
+  esac
+}
+
+main "$@"

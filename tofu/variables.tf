@@ -34,7 +34,7 @@ variable "username" {
 variable "password" {
   description = "OpenStack password (from passwords.yml)"
   type        = string
-  sensitive   = true  # Won't show in plan output
+  sensitive   = true # Won't show in plan output
 }
 
 variable "domain_name" {

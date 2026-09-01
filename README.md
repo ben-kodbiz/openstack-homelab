@@ -74,6 +74,33 @@ cd ~/homelab
 ./openstack-lab.zsh status
 ```
 
+## Linux Fleet (20 VMs via OpenTofu)
+
+Once OpenStack is running, provision the fleet:
+
+```bash
+# 1. Get credentials from the guest
+ssh stack@192.168.122.17 cat /etc/kolla/admin-openrc.sh > /tmp/lab-openrc.sh
+source /tmp/lab-openrc.sh
+
+# 2. One-time prerequisites (flavor fleet.tiny, keypair, quotas)
+./labctl fleet prepare
+
+# 3. Review and apply (default 20 VMs; or: ./labctl fleet apply 5)
+./labctl fleet plan
+./labctl fleet apply
+
+# 4. Verify: all fleet-NNN ACTIVE + pingable
+./labctl fleet verify
+```
+
+Fleet lives in `tofu/environments/lab/` (modules in `tofu/modules/`), each VM is
+`fleet-NNN` (1 vCPU / 1 GB / 5 GB), bootstrapped idempotently by
+`fleet/cloud-init/fleet.yaml.tmpl`. Reproducible: scaling down destroys cleanly,
+scaling up recreates exactly.
+
+CI gate: `./labctl ci` (zsh syntax, tofu fmt/validate, secret scan).
+
 ## Configuration
 
 All configuration lives in `config/lab.conf`. Edit this file before first deployment.

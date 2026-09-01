@@ -3,8 +3,9 @@
 ## What This Is
 
 Zsh-based idempotent OpenStack lab: Ubuntu 26.04 host → KVM/libvirt VM → Kolla-Ansible → OpenStack 2026.1.
+Evolving into an enterprise Linux fleet lab per `agent_fix.md` (OpenTofu fleet of 20 VMs + GitOps CI).
 
-Single entry point: `./openstack-lab.zsh <command>`
+Single entry points: `./openstack-lab.zsh <command>` (OpenStack deployment) and `./labctl <command>` (fleet + labctl ops).
 
 ## Critical Constraints
 
@@ -73,6 +74,30 @@ tests/                   # Zsh test scripts
 ## Nova/Libvirt Gotcha
 
 Do NOT assume `/var/lib/nova/instances` is shared between nova-compute and nova-libvirt containers. Verify mounts explicitly. This is the most common deployment failure.
+
+## Responsibility Boundaries (agent_fix.md §5)
+
+- **Zsh layer** (`openstack-lab.zsh`, `labctl`): host prep, control VM, Kolla deploy. NEVER manages OpenStack tenant resources
+- **OpenTofu layer** (`tofu/environments/lab/` + `tofu/modules/`): networks, SGs, instances, fleet. Single source for infrastructure
+- **Ansible/AWX, NetBox, Wazuh**: future — see `roadmap/`. Do not implement ahead of fleet stability
+
+## Fleet Commands
+
+```zsh
+./labctl fleet prepare   # flavor fleet.tiny, keypair, quotas (idempotent)
+./labctl fleet plan [N]  # tofu plan (N VMs, default 20)
+./labctl fleet apply [N] # tofu apply (manual, reviewed)
+./labctl fleet status   # fleet names + IPs from state
+./labctl fleet verify   # all fleet VMs ACTIVE + pingable
+./labctl fleet destroy  # interactive-confirmed destroy (fleet scope only)
+./labctl ci             # GitOps CI gate (fmt/validate/syntax/secrets)
+```
+
+## Capacity Policy (measured, not assumed)
+
+- CPU ratio 4.0 (8 cores → 32 vCPU schedulable; 22 used by 20 fleet + control)
+- RAM 1:1 — fleet total must stay under free RAM
+- Disk: watch BOTH `disk_available_least` (Nova) AND guest filesystem free
 
 ## Octavia LBaaS
 

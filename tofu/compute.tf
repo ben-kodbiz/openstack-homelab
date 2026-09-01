@@ -12,7 +12,7 @@
 # Create a new key pair OR use an existing one
 # ----------------------------------------------------------------------------
 resource "openstack_compute_keypair_v2" "default" {
-  count      = var.ssh_public_key != "" ? 1 : 0  # Only create if key provided
+  count      = var.ssh_public_key != "" ? 1 : 0 # Only create if key provided
   name       = var.keyPair
   public_key = var.ssh_public_key
 }
@@ -116,7 +116,7 @@ resource "openstack_compute_instance_v2" "vm" {
 
     connection {
       type        = "ssh"
-      user        = "cirros"  # Default user for CirrOS
+      user        = "cirros" # Default user for CirrOS
       private_key = file("~/.ssh/id_ed25519")
       host        = self.access_ip_v4
       timeout     = "60s"
@@ -133,8 +133,8 @@ resource "openstack_compute_instance_v2" "vm" {
 # Assigns an external IP for internet access
 # ----------------------------------------------------------------------------
 resource "openstack_networking_floatingip_v2" "vm" {
-  count  = var.assign_floating_ip ? (length(var.instance_names) > 0 ? length(var.instance_names) : var.instance_count) : 0
-  pool   = var.floating_ip_pool
+  count = var.assign_floating_ip ? (length(var.instance_names) > 0 ? length(var.instance_names) : var.instance_count) : 0
+  pool  = var.floating_ip_pool
 
   tags = ["managed-by-opentofu"]
 }

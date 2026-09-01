@@ -1,0 +1,10 @@
+# ============================================================================
+# environments/lab — local tfvars (NOT committed; copy from .example)
+# ============================================================================
+
+# fleet_size = 20
+# fleet_image_name = "cirros"
+# fleet_flavor_name = "m1.tiny"
+# fleet_disk_gb = 5
+# fleet_key_pair = "default"
+# fleet_ssh_public_key = "ssh-ed25519 AAAA... openstack-lab"
