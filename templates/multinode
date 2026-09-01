@@ -1,0 +1,12 @@
+[control]
+# Guest IP is discovered at runtime, not hard-coded here.
+# This template is used by kolla_generate_config() which fills in the actual IP.
+
+[network]
+
+[compute]
+
+[monitoring]
+
+[deployment]
+localhost ansible_connection=local

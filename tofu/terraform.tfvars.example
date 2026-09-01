@@ -1,0 +1,63 @@
+# ============================================================================
+# terraform.tfvars — Your values (copy to terraform.tfvars and edit)
+# ============================================================================
+# This file contains YOUR specific values.
+# DO NOT commit this file to git — it contains passwords!
+
+# ----------------------------------------------------------------------------
+# Authentication
+# Get these from: cat /etc/kolla/passwords.yml | grep keystone_admin
+# ----------------------------------------------------------------------------
+
+auth_url    = "http://192.168.122.17:5000/v3"
+region      = "RegionOne"
+project_name = "admin"
+username    = "admin"
+password    = "56iEaDB4tRI0C0jdNUjBMTdo8Ou81yK6wYfLvSTz"  # From passwords.yml
+domain_name = "Default"
+
+# ----------------------------------------------------------------------------
+# Network
+# ----------------------------------------------------------------------------
+
+external_network_name = "external-net"
+external_subnet_name  = "external-subnet"
+internal_network_cidr = "10.0.0.0/24"
+internal_network_gateway = "10.0.0.1"
+internal_dns          = "8.8.8.8"
+
+# ----------------------------------------------------------------------------
+# Compute
+# ----------------------------------------------------------------------------
+
+keyPair      = "default"
+image_name   = "cirros"
+flavor_name  = "m1.tiny"
+
+# SSH public key (uncomment to create key pair automatically)
+# ssh_public_key = "ssh-ed25519 AAAA... user@host"
+
+# ----------------------------------------------------------------------------
+# Instances
+# ----------------------------------------------------------------------------
+
+instance_count = 1
+instance_prefix = "vm"
+
+# Or create specific named instances:
+# instance_names = ["web-1", "web-2", "db-1"]
+
+# ----------------------------------------------------------------------------
+# Floating IPs
+# ----------------------------------------------------------------------------
+
+assign_floating_ip = true
+floating_ip_pool   = "external-net"
+
+# ----------------------------------------------------------------------------
+# Security
+# ----------------------------------------------------------------------------
+
+allowed_ssh_cidr = "0.0.0.0/0"  # Restrict to your IP: "192.168.122.17/32"
+enable_http      = true
+enable_https     = false

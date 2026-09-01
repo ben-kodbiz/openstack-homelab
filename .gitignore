@@ -1,0 +1,23 @@
+# Secrets
+config/secrets.conf
+*.key
+*.pem
+
+# State and logs
+state/
+logs/
+
+# Generated files
+*.iso
+*.qcow2
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
